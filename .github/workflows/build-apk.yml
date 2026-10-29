@@ -20,7 +20,7 @@ jobs:
       - name: Set up Godot
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.7-stable
+          version: 4.7.2
           use-dotnet: false
           include-templates: true
 
