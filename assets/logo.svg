@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+<title>Space Shooters logo emblem</title>
+<defs>
+<radialGradient id="lglow" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#35c8ff" stop-opacity="0.4"/>
+<stop offset="1" stop-color="#35c8ff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="lhull" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="1" stop-color="#b9c8e2"/>
+</linearGradient>
+<linearGradient id="lblue" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#3a9bff"/>
+<stop offset="1" stop-color="#174a94"/>
+</linearGradient>
+<linearGradient id="lcanopy" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#bff3ff"/>
+<stop offset="0.5" stop-color="#35c8ff"/>
+<stop offset="1" stop-color="#0e5f9e"/>
+</linearGradient>
+<linearGradient id="lflame" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#eaffff"/>
+<stop offset="0.5" stop-color="#4fe3ff"/>
+<stop offset="1" stop-color="#1a6dff" stop-opacity="0.1"/>
+</linearGradient>
+</defs>
+<ellipse cx="320" cy="195" rx="265" ry="150" fill="url(#lglow)"/>
+<ellipse cx="320" cy="195" rx="252" ry="108" fill="none" stroke="#35c8ff" stroke-width="3" opacity="0.35" stroke-dasharray="2 12" stroke-linecap="round"/>
+<ellipse cx="320" cy="195" rx="225" ry="92" fill="none" stroke="#35c8ff" stroke-width="6" opacity="0.16"/>
+<g stroke="#4fe3ff" stroke-linecap="round">
+<line x1="28" y1="150" x2="150" y2="150" stroke-width="5" opacity="0.8"/>
+<line x1="60" y1="180" x2="150" y2="180" stroke-width="3" opacity="0.5"/>
+<line x1="28" y1="210" x2="130" y2="210" stroke-width="4" opacity="0.65"/>
+<line x1="490" y1="150" x2="612" y2="150" stroke-width="5" opacity="0.8"/>
+<line x1="490" y1="180" x2="580" y2="180" stroke-width="3" opacity="0.5"/>
+<line x1="510" y1="210" x2="612" y2="210" stroke-width="4" opacity="0.65"/>
+</g>
+<polygon points="308,232 212,352 240,360 315,280" fill="url(#lhull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="332,232 428,352 400,360 325,280" fill="url(#lhull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="297,254 232,336 247,341 306,270" fill="url(#lblue)"/>
+<polygon points="343,254 408,336 393,341 334,270" fill="url(#lblue)"/>
+<path d="M278,322 C272,338 274,348 282,357 C290,348 292,338 288,322 Z" fill="url(#lflame)"/>
+<path d="M362,322 C368,338 366,348 358,357 C350,348 348,338 352,322 Z" fill="url(#lflame)"/>
+<rect x="270" y="300" width="28" height="24" rx="8" fill="#2a3350" stroke="#0a1a3a" stroke-width="3"/>
+<rect x="342" y="300" width="28" height="24" rx="8" fill="#2a3350" stroke="#0a1a3a" stroke-width="3"/>
+<path d="M320,108 L336,190 L341,285 L326,322 L320,310 L314,322 L299,285 L304,190 Z" fill="url(#lhull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="311,150 316,150 314,280 308,280" fill="url(#lblue)"/>
+<polygon points="329,150 324,150 326,280 332,280" fill="url(#lblue)"/>
+<ellipse cx="320" cy="205" rx="22" ry="36" fill="url(#lcanopy)" stroke="#0a1a3a" stroke-width="3"/>
+<ellipse cx="313" cy="193" rx="7" ry="13" fill="#ffffff" opacity="0.75"/>
+<g fill="#bff3ff">
+<polygon points="120,90 124,100 134,104 124,108 120,118 116,108 106,104 116,100" opacity="0.9"/>
+<polygon points="528,84 531,92 539,95 531,98 528,106 525,98 517,95 525,92" opacity="0.8"/>
+<polygon points="560,250 563,257 570,260 563,263 560,270 557,263 550,260 557,257" opacity="0.7"/>
+<polygon points="84,262 87,269 94,272 87,275 84,282 81,275 74,272 81,269" opacity="0.7"/>
+</g>
+</svg>

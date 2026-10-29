@@ -1,0 +1,57 @@
+# Godot 4+ specific ignores
+.godot/
+godot_editor_metadata.txt
+
+# Godot-specific ignores (the .import/ cache dir is Godot 3; harmless on Godot 4)
+.import/
+export.cfg
+export_credentials.cfg
+
+# Imported translations (auto-generated from CSV files)
+*.translation
+
+# --- KEEP COMMITTED - do NOT ignore these ---
+# *.import files (import settings), *.gd.uid (stable resource UIDs),
+# export_presets.cfg (export configuration), *.aar plugin bridges in addons/
+
+# Mono / C# (only matters if you add C# later)
+.mono/
+data_*/
+mono_crash.*.json
+
+# Godot Android export working files (generated - never commit)
+android/build/build/
+android/build/.gradle/
+android/build/.cxx/
+android/build/libs/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Local Android SDK path (machine-specific)
+local.properties
+
+# Signing keys - NEVER push real keys to GitHub
+*.keystore
+*.jks
+
+# Gradle plugin builds (built by CI - never commit outputs)
+android-plugins/.gradle/
+android-plugins/*/build/
+
+# Secrets - NEVER push real keys (Meta API key etc.)
+.env
+.env.*
+!.env.example
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*~
+secrets.cfg
+export_presets.cfg
+.godot/
+*.apk
+android/build/libs/
+android/build/libs/

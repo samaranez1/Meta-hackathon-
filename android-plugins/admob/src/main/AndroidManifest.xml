@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Library manifest for the AdMob bridge. The Play Services Activities come
+     from the ads SDK's own manifest via manifest merging; the APPLICATION_ID
+     meta-data is injected by the Godot export plugin - nothing needed here. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+</manifest>

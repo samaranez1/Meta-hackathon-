@@ -1,0 +1,87 @@
+# Builds the Google Play Billing bridge AAR (Godot 4 Android plugin) and
+# commits it to addons/google_play_billing/android/ so game exports pick it up.
+# Trigger: manual (Actions tab > Run workflow) or any push touching the module.
+# See android-plugins/README.md for the local (PC) build alternative.
+
+name: Build Play Billing AAR
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android-plugins/google-play-billing/**'
+      - 'android-plugins/build.gradle'
+      - 'android-plugins/settings.gradle'
+      - 'android-plugins/gradle.properties'
+      - '.github/workflows/build-billing-aar.yml'
+  pull_request:
+    paths:
+      - 'android-plugins/google-play-billing/**'
+      - 'android-plugins/build.gradle'
+      - 'android-plugins/settings.gradle'
+      - 'android-plugins/gradle.properties'
+      - '.github/workflows/build-billing-aar.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: billing-aar
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ubuntu runners ship the full Android SDK preinstalled; just ensure
+      # our exact packages exist (setup-android action is incompatible here).
+      - name: Install Android platform + build-tools
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Set up Gradle 8.10
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Build billing AAR
+        working-directory: android-plugins
+        run: gradle :google-play-billing:assembleRelease --no-daemon --stacktrace
+
+      - name: Show AAR output
+        working-directory: android-plugins
+        run: ls -la google-play-billing/build/outputs/aar/
+
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-billing-release.aar
+          path: android-plugins/google-play-billing/build/outputs/aar/google-play-billing-release.aar
+          if-no-files-found: error
+
+      - name: Commit AAR into addons
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          cp android-plugins/google-play-billing/build/outputs/aar/google-play-billing-release.aar addons/google_play_billing/android/google-play-billing-release.aar
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add addons/google_play_billing/android/google-play-billing-release.aar
+          if git diff --cached --quiet; then
+            echo "AAR unchanged, nothing to commit."
+          else
+            git commit -m "Build Play Billing AAR [skip ci]"
+            git push origin HEAD:main || echo "::warning::Push failed (concurrent commit?). Download the AAR from this run's Artifacts instead."
+          fi

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>Space Shooters app icon</title>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#161638"/>
+<stop offset="1" stop-color="#05051a"/>
+</linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#35c8ff" stop-opacity="0.55"/>
+<stop offset="1" stop-color="#35c8ff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="1" stop-color="#b9c8e2"/>
+</linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#3a9bff"/>
+<stop offset="1" stop-color="#174a94"/>
+</linearGradient>
+<linearGradient id="canopy" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#bff3ff"/>
+<stop offset="0.5" stop-color="#35c8ff"/>
+<stop offset="1" stop-color="#0e5f9e"/>
+</linearGradient>
+<linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#eaffff"/>
+<stop offset="0.4" stop-color="#4fe3ff"/>
+<stop offset="1" stop-color="#1a6dff" stop-opacity="0.1"/>
+</linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<g fill="#ffffff">
+<circle cx="60" cy="80" r="3" opacity="0.9"/>
+<circle cx="150" cy="150" r="2" opacity="0.6"/>
+<circle cx="420" cy="70" r="2.5" opacity="0.7"/>
+<circle cx="470" cy="180" r="2" opacity="0.5"/>
+<circle cx="80" cy="330" r="2" opacity="0.5"/>
+<circle cx="440" cy="420" r="2.5" opacity="0.7"/>
+<circle cx="360" cy="470" r="2" opacity="0.5"/>
+<circle cx="120" cy="460" r="2" opacity="0.6"/>
+</g>
+<g fill="#7fe7ff">
+<circle cx="220" cy="60" r="2.5" opacity="0.8"/>
+<circle cx="330" cy="120" r="2" opacity="0.6"/>
+<circle cx="40" cy="230" r="2.5" opacity="0.7"/>
+<circle cx="480" cy="290" r="2" opacity="0.6"/>
+</g>
+<ellipse cx="256" cy="280" rx="185" ry="155" fill="url(#glow)" opacity="0.5"/>
+<polygon points="214,236 92,388 126,398 222,300" fill="url(#hull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="298,236 420,388 386,398 290,300" fill="url(#hull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="200,262 128,368 146,374 210,292" fill="url(#blue)"/>
+<polygon points="312,262 384,368 366,374 302,292" fill="url(#blue)"/>
+<circle cx="102" cy="389" r="6" fill="#ff5a5a"/>
+<circle cx="410" cy="389" r="6" fill="#7dff6a"/>
+<path d="M204,356 C196,392 200,422 212,450 C224,422 228,392 220,356 Z" fill="url(#flame)"/>
+<path d="M308,356 C316,392 312,422 300,450 C288,422 284,392 292,356 Z" fill="url(#flame)"/>
+<rect x="196" y="328" width="32" height="28" rx="9" fill="#2a3350" stroke="#0a1a3a" stroke-width="3"/>
+<rect x="284" y="328" width="32" height="28" rx="9" fill="#2a3350" stroke="#0a1a3a" stroke-width="3"/>
+<rect x="202" y="334" width="20" height="9" rx="4.5" fill="#4fe3ff"/>
+<rect x="290" y="334" width="20" height="9" rx="4.5" fill="#4fe3ff"/>
+<path d="M256,84 L276,180 L282,300 L264,344 L256,330 L248,344 L230,300 L236,180 Z" fill="url(#hull)" stroke="#0a1a3a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="246,140 252,140 250,300 242,300" fill="url(#blue)"/>
+<polygon points="266,140 260,140 262,300 270,300" fill="url(#blue)"/>
+<ellipse cx="256" cy="215" rx="26" ry="44" fill="url(#canopy)" stroke="#0a1a3a" stroke-width="3"/>
+<ellipse cx="248" cy="200" rx="8" ry="16" fill="#ffffff" opacity="0.75"/>
+</svg>

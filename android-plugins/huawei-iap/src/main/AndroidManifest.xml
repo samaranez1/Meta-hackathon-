@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Library manifest for the Huawei IAP bridge. HMS activities come from the
+     IAP SDK's own manifest via manifest merging - nothing needed here. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+</manifest>
