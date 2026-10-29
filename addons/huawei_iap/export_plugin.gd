@@ -6,7 +6,8 @@ extends EditorExportPlugin
 ## coin store shows as unavailable.
 
 const AAR_RES_PATH := "res://addons/huawei_iap/android/huawei-iap-release.aar"
-const AAR_EXPORT_PATH := "addons/huawei_iap/android/huawei-iap-release.aar"
+// _get_android_libraries paths are relative to res://addons/ (or res://-absolute).
+const AAR_EXPORT_PATH := "huawei_iap/android/huawei-iap-release.aar"
 # Verify against https://developer.huawei.com/consumer/en/doc/ before release builds.
 const HMS_IAP_DEP := "com.huawei.hms:iap:6.4.0.300"
 

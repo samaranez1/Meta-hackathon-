@@ -7,7 +7,8 @@ extends EditorExportPlugin
 ## game falls back to Huawei ads (when HMS Core exists) or no ads.
 
 const AAR_RES_PATH := "res://addons/google_admob/android/admob-release.aar"
-const AAR_EXPORT_PATH := "addons/google_admob/android/admob-release.aar"
+// _get_android_libraries paths are relative to res://addons/ (or res://-absolute).
+const AAR_EXPORT_PATH := "google_admob/android/admob-release.aar"
 # Verify against https://developers.google.com/admob/android before release builds.
 const GMA_DEP := "com.google.android.gms:play-services-ads:23.0.0"
 # Google's sample app ID - lets test ads run with zero setup. Replace with

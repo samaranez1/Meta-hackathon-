@@ -54,6 +54,36 @@ jobs:
           EOF
           cat ~/.config/godot/editor_settings-4.tres
 
+      # The committed android/build is missing the template's default mipmap
+      # icons, which breaks resource linking with
+      # "error: resource mipmap/icon_background not found".
+      # Restore a pristine template from android_source.zip (shipped inside
+      # the export templates) before exporting. Nothing custom is lost: the
+      # repo copy holds only stock template files plus stale export output.
+      - name: Restore Android build template
+        run: |
+          TMPL_DIR="$HOME/.local/share/godot/export_templates"
+          SRC_ZIP="$(find "$TMPL_DIR" -name 'android_source.zip' | head -n 1)"
+          if [ -z "$SRC_ZIP" ]; then
+            echo "android_source.zip not found under $TMPL_DIR"
+            find "$TMPL_DIR" -maxdepth 2 | head -50
+            exit 1
+          fi
+          echo "Restoring android/build from $SRC_ZIP"
+          rm -rf /tmp/android_tpl android/build
+          mkdir -p /tmp/android_tpl android/build
+          unzip -q "$SRC_ZIP" -d /tmp/android_tpl
+          if [ -f /tmp/android_tpl/build.gradle ]; then
+            cp -a /tmp/android_tpl/. android/build/
+          else
+            cp -a /tmp/android_tpl/build/. android/build/
+          fi
+          rm -rf /tmp/android_tpl
+          ls android/build/res
+
+      - name: Make gradlew executable
+        run: chmod +x android/build/gradlew
+
       - name: Export debug APK
         run: godot --headless --export-debug "Android" "build/space-shooters-debug.apk"
 
