@@ -27,11 +27,13 @@ jobs:
           use-dotnet: false
           include-templates: true
 
+      # Must match android/build/config.gradle: compileSdk 36,
+      # buildTools 36.1.0, ndkVersion 29.0.14206865.
       - name: Install Android SDK packages
         run: |
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.1.0" "ndk;29.0.14206865"
 
       - name: Configure Godot for Android
         run: |
