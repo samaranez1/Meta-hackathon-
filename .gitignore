@@ -50,7 +50,6 @@ android-plugins/*/build/
 Thumbs.db
 *~
 secrets.cfg
-export_presets.cfg
 .godot/
 *.apk
 android/build/libs/
