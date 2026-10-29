@@ -7,7 +7,7 @@ extends EditorExportPlugin
 ## unavailable.
 
 const AAR_RES_PATH := "res://addons/google_play_billing/android/google-play-billing-release.aar"
-const AAR_EXPORT_PATH := "addons/google_play_billing/android/google-play-billing-release.aar"
+const AAR_EXPORT_PATH := "google_play_billing/android/google-play-billing-release.aar"
 # Verify against https://developer.android.com/google/play/billing/release-notes
 # before release builds. Google Play requires Billing 8+ for new apps/updates.
 const BILLING_DEP := "com.android.billingclient:billing:8.2.0"
