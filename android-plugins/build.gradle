@@ -1,0 +1,28 @@
+// Root build file for the Space Shooters store plugin AARs.
+// Build: ./gradlew :petal-ads:assembleRelease :huawei-iap:assembleRelease :admob:assembleRelease :google-play-billing:assembleRelease
+// (or open this folder in Android Studio). Read README.md in this folder first.
+
+plugins {
+    // Align the Android Gradle Plugin with the version your Godot export
+    // templates use; verify in the Godot docs under Exporting > Android.
+    id("com.android.library") version "8.5.0" apply false
+}
+
+ext {
+    // Verify HMS versions against https://developer.huawei.com/consumer/en/doc/
+    // before release builds. Gradle fails fast if one does not exist.
+    hmsAdsVersion = "13.4.62.300"
+    hmsIapVersion = "6.4.0.300"
+    // Verify against https://developers.google.com/admob/android before release builds.
+    gmaAdsVersion = "23.0.0"
+    // Verify against https://developer.android.com/google/play/billing/release-notes
+    // before release builds. Google Play requires Billing 8+ for new apps/updates.
+    playBillingVersion = "8.2.0"
+    compileSdkVersion = 34
+    minSdkVersion = 21
+    // Godot engine classes needed to compile the bridges. The Godot version
+    // MUST match your editor (Help > About); verified present on Maven Central
+    // for 4.7.2.stable. How to resolve this dependency is documented in
+    // android-plugins/README.md - confirm the coordinates there before building.
+    godotLib = "org.godotengine:godot:4.7.2.stable"
+}

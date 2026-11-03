@@ -1,0 +1,94 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          # Pinned to 4.7.1 to match android/.build_version (Godot fails
+          # the export if the editor version differs from the installed
+          # Android build template).
+          version: 4.7.1
+          use-dotnet: false
+          include-templates: true
+
+      # Must match android/build/config.gradle: compileSdk 36,
+      # buildTools 36.1.0, ndkVersion 29.0.14206865.
+      - name: Install Android SDK packages
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.1.0" "ndk;29.0.14206865"
+
+      - name: Configure Godot for Android
+        run: |
+          mkdir -p ~/.config/godot build
+          keytool -genkeypair -keystore "$GITHUB_WORKSPACE/debug.keystore" -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=Debug" -noprompt
+          cat > ~/.config/godot/editor_settings-4.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$GITHUB_WORKSPACE/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+          cat ~/.config/godot/editor_settings-4.tres
+
+      # The committed android/build is missing the template's default mipmap
+      # icons, which breaks resource linking with
+      # "error: resource mipmap/icon_background not found".
+      # Restore a pristine template from android_source.zip (shipped inside
+      # the export templates) before exporting. Nothing custom is lost: the
+      # repo copy holds only stock template files plus stale export output.
+      - name: Restore Android build template
+        run: |
+          TMPL_DIR="$HOME/.local/share/godot/export_templates"
+          SRC_ZIP="$(find "$TMPL_DIR" -name 'android_source.zip' | head -n 1)"
+          if [ -z "$SRC_ZIP" ]; then
+            echo "android_source.zip not found under $TMPL_DIR"
+            find "$TMPL_DIR" -maxdepth 2 | head -50
+            exit 1
+          fi
+          echo "Restoring android/build from $SRC_ZIP"
+          rm -rf /tmp/android_tpl android/build
+          mkdir -p /tmp/android_tpl android/build
+          unzip -q "$SRC_ZIP" -d /tmp/android_tpl
+          if [ -f /tmp/android_tpl/build.gradle ]; then
+            cp -a /tmp/android_tpl/. android/build/
+          else
+            cp -a /tmp/android_tpl/build/. android/build/
+          fi
+          rm -rf /tmp/android_tpl
+          ls android/build/res
+
+      - name: Make gradlew executable
+        run: chmod +x android/build/gradlew
+
+      - name: Export debug APK
+        run: godot --headless --export-debug "Android" "build/space-shooters-debug.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: space-shooters-debug-apk
+          path: build/*.apk

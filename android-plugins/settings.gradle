@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        // Huawei HMS SDK repository. Required - do not remove.
+        maven { url "https://developer.huawei.com/repo/" }
+    }
+}
+rootProject.name = "space-shooters-hms-plugins"
+include(":petal-ads")
+include(":huawei-iap")
+include(":admob")
+include(":google-play-billing")
