@@ -20,6 +20,8 @@ for full AI mode - see `ai/README.md`).
 The player ship uses `player.png`
 (its magenta background is removed at runtime by a chroma-key shader, so you
 don't need to edit the image).
+Play the game on vercel https://meta-hackathon-ai-ebk9.vercel.app/
+
 
 ## Run it
 
