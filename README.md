@@ -1,8 +1,7 @@
 # Space Shooters: AI Wingman (Godot 4.7)
 
 > Meta Global AI Developer Hackathon entry - Indie track, "Build for Your
-> World". See [HACKATHON.md](HACKATHON.md) for the submission and
-> [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the demo video plan.
+> World". 
 >
 > Built by **Samuel Arañez** — Hilongos, Leyte, Philippines.
 
