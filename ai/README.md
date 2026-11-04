@@ -57,12 +57,30 @@ functions in `api/` reuse the same logic via `ai/wingman_core.py`:
 Deploy:
 
 1. In Godot: `Project -> Export... -> Web -> Export Project` to
-   `build/web/index.html` (already set in `export_presets.cfg`).
-2. `vercel` from the repo root (uses `vercel.json`, serves `build/web/`
-   + `api/`). Or `vercel --prod` to go live.
+   `build/index.html` (already set in `export_presets.cfg`).
+2. `vercel` from the repo root (uses `vercel.json`, serves `build/`
+   statics + `api/` functions). Or `vercel --prod` to go live.
 3. In the Vercel dashboard: `Project -> Settings -> Environment Variables`,
-   add `META_API_KEY=LLM|...` (and optional `META_MODEL`), then redeploy.
-   Without the key the game still plays with fallback lines (`AI LOCAL`).
+   add `META_API_KEY=LLM|...` (plus optional `META_MODEL` / `META_API_URL`),
+   then redeploy. The key lives only in Vercel - never in the game/repo.
+4. Verify: `GET https://<your-app>.vercel.app/api/health` shows
+   `"meta_configured": true`.
+
+Behavior notes:
+
+- `api/` must stay at the repo root (sibling of `build/`, not inside it):
+  Vercel collects functions from `<project>/api` regardless of
+  `outputDirectory`. Shared logic in `ai/wingman_core.py` + `api/_common.py`
+  (underscore = never routed as an endpoint) is bundled automatically.
+- Content endpoints return live Meta JSON on 200, or **503** when only
+  fallback is available (no key / LLM failure) so the game uses its own
+  offline lines. Health always returns 200 with `{ok, model,
+  meta_configured}`. The local `ai/server.py` instead returns 200 +
+  fallback text so desktop runs fully offline.
+- Guards: inputs sanitized + clamped, outputs capped, bodies capped at
+  16 KB, CORS `*` with OPTIONS preflight, and 30 req/min/IP in-memory
+  rate limit (429 + `Retry-After`; resets on cold starts - use Vercel
+  Firewall for hard limits).
 
 Local logic lives in `ai/wingman_core.py`; `ai/server.py` and `api/*.py`
 are thin wrappers, so desktop and web never drift.
@@ -71,4 +89,5 @@ are thin wrappers, so desktop and web never drift.
 
 ```bash
 python3 ai/test_server.py   # stdlib unittest: endpoints + disconnect regression
+python3 ai/test_api.py      # stdlib unittest: shapes, 503 policy, rate limit, CORS
 ```

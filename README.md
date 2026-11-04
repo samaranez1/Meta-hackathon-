@@ -117,6 +117,7 @@ tests/ai_test.tscn  Headless AI integration test
 tests/powerup_test.tscn  Headless pickup physics regression test
 tests/save_progress_test.tscn  Headless per-player save regression test
 tests/voice_test.tscn  Headless voice backend/clip/toggle regression test
+tests/export_path_test.tscn  Headless Android AAR path contract test
 HACKATHON.md        Hackathon submission doc
 DEMO_SCRIPT.md      90-second demo video plan
 ```

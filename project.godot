@@ -16,6 +16,7 @@ run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.02, 0.02, 0.08, 1)
 config/icon="res://icon.svg"
+boot_splash/image="res://generated_images/call_01a1a7387cbd748c88a2b39b83a8fcd2.jpg"
 
 [audio]
 
@@ -51,3 +52,7 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_s3tc_bptc=true
 environment/defaults/default_clear_color=Color(0.02, 0.02, 0.08, 1)
+
+[space_shooters]
+
+ai_url="https://meta-hackathon-ai-gm6e.vercel.app/api"

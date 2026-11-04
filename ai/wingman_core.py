@@ -34,7 +34,13 @@ def _load_dotenv() -> None:
 
 _load_dotenv()
 
-META_BASE_URL = os.environ.get("META_BASE_URL", "https://api.meta.ai/v1").rstrip("/")
+# META_API_URL is accepted as an alias (Vercel dashboard name); a set
+# META_BASE_URL keeps precedence so existing deployments never change.
+META_BASE_URL = (
+    os.environ.get("META_BASE_URL")
+    or os.environ.get("META_API_URL")
+    or "https://api.meta.ai/v1"
+).rstrip("/")
 META_MODEL = os.environ.get("META_MODEL", "muse-spark-1.3")
 META_API_KEY = os.environ.get("META_API_KEY", os.environ.get("META_MODEL_API_KEY", ""))
 AI_PORT = int(os.environ.get("AI_PORT", "8765"))
@@ -92,6 +98,66 @@ def clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
 
+def s_int(v, default: int = 0, lo: int | None = None,
+          hi: int | None = None) -> int:
+    """Lenient int: garbage -> default, then range-clamped. Never raises."""
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return default
+    if lo is not None:
+        n = max(lo, n)
+    if hi is not None:
+        n = min(hi, n)
+    return n
+
+
+def s_float(v, default: float = 0.0, lo: float | None = None,
+            hi: float | None = None) -> float:
+    """Lenient float: garbage/NaN -> default, then range-clamped."""
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return default
+    if n != n:  # NaN
+        return default
+    if lo is not None:
+        n = max(lo, n)
+    if hi is not None:
+        n = min(hi, n)
+    return n
+
+
+def s_str(v, default: str = "", max_len: int = 64) -> str:
+    """Lenient capped string: null/bool/empty -> default. Never raises."""
+    if v is None or isinstance(v, bool):
+        return default
+    try:
+        s = str(v).strip()
+    except Exception:
+        return default
+    if not s:
+        return default
+    return s[:max_len]
+
+
+def s_bool(v, default: bool = False) -> bool:
+    """Lenient bool: parses 1/0/true/false/yes/no; else default."""
+    if isinstance(v, bool):
+        return v
+    if v is None:
+        return default
+    if isinstance(v, (int, float)):
+        return bool(v)
+    if isinstance(v, str):
+        t = v.strip().lower()
+        if t in ("1", "true", "yes", "y", "on"):
+            return True
+        if t in ("0", "false", "no", "n", "off", ""):
+            return False
+    return default
+
+
 def _chat_json(system: str, user: str, max_tokens: int, temp: float,
                what: str) -> tuple[dict | None, str | None]:
     """chat() + JSON extraction with retries. Returns (dict, raw)."""
@@ -135,9 +201,10 @@ def fallback_briefing(level: int, level_name: str) -> dict:
 
 def fallback_director(hp_frac: float, kills_per_min: float, deaths: int) -> dict:
     """Rule-grounded difficulty base. Mirrored in scripts/meta_ai.gd."""
-    hp = clamp(float(hp_frac), 0.0, 1.0)
-    kpm = clamp(float(kills_per_min), 0.0, 60.0)
-    if hp < 0.35 or int(deaths) > 0:
+    hp = clamp(s_float(hp_frac, 1.0), 0.0, 1.0)
+    kpm = clamp(s_float(kills_per_min, 5.0), 0.0, 60.0)
+    d = s_int(deaths, 0, 0, 1000000)
+    if hp < 0.35 or d > 0:
         return {"spawn_interval_mult": 1.35, "enemy_scale_mult": 0.85,
                 "tip": "Wingman easing pressure - grab shields and breathe.",
                 "source": "fallback"}
@@ -151,8 +218,10 @@ def fallback_director(hp_frac: float, kills_per_min: float, deaths: int) -> dict
 
 
 def make_briefing(p: dict) -> dict:
-    level = int(p.get("level", 1))
-    level_name = str(p.get("level_name", "UNKNOWN"))
+    level = s_int(p.get("level", 1), 1, 1, 5)
+    level_name = s_str(p.get("level_name", "UNKNOWN"), "UNKNOWN", 64)
+    hp_pct = s_int(p.get("hp_pct", 100), 100, 0, 100)
+    kills = s_int(p.get("kills", 0), 0, 0, 1000000)
     boss = BOSSES.get(level, "UNKNOWN")
     fb = fallback_briefing(level, level_name)
     d, _raw = _chat_json(
@@ -162,7 +231,7 @@ def make_briefing(p: dict) -> dict:
         '{"briefing": "...", "taunt": "BOSS NAME: ...", "tip": "..."}.',
         "Level %d of 5, sector '%s', end boss '%s'. Player hull %s%%, kills %s. "
         "The taunt field must start with '%s: '." % (
-            level, level_name, boss, p.get("hp_pct", 100), p.get("kills", 0), boss),
+            level, level_name, boss, hp_pct, kills, boss),
         500, 0.6, "briefing",
     )
     if d:
@@ -176,9 +245,10 @@ def make_briefing(p: dict) -> dict:
 def make_director(p: dict) -> dict:
     """Adaptive difficulty. Numbers are ALWAYS safety-bounded; the LLM only
     tunes within bounds and writes the coaching tip."""
-    hp = clamp(float(p.get("hp_frac", 1.0)), 0.0, 1.0)
-    kpm = clamp(float(p.get("kills_per_min", 5.0)), 0.0, 60.0)
-    deaths = int(p.get("deaths", 0))
+    hp = clamp(s_float(p.get("hp_frac", 1.0), 1.0), 0.0, 1.0)
+    kpm = clamp(s_float(p.get("kills_per_min", 5.0), 5.0), 0.0, 60.0)
+    deaths = s_int(p.get("deaths", 0), 0, 0, 1000000)
+    level = s_int(p.get("level", 1), 1, 1, 5)
     base = fallback_director(hp, kpm, deaths)
     interval, scale, tip = (base["spawn_interval_mult"],
                             base["enemy_scale_mult"], base["tip"])
@@ -189,7 +259,7 @@ def make_director(p: dict) -> dict:
         '{"spawn_interval_mult": 0.8-1.4, "enemy_scale_mult": 0.8-1.2, "tip": "one short clean tip"}.',
         "Level %s, hull %.0f%%, kills/min %.1f, deaths %d. Base suggestion: "
         "interval x%.2f, scale x%.2f." % (
-            p.get("level", 1), hp * 100, kpm, deaths, interval, scale),
+            level, hp * 100, kpm, deaths, interval, scale),
         500, 0.5, "director",
     )
     if d:
@@ -204,12 +274,15 @@ def make_director(p: dict) -> dict:
 
 
 def make_coach(p: dict) -> dict:
-    victory = bool(p.get("victory", False))
+    victory = s_bool(p.get("victory", False))
+    score = s_int(p.get("score", 0), 0, 0, 10000000)
+    kills = s_int(p.get("kills", 0), 0, 0, 1000000)
+    lvl = s_int(p.get("level_reached", 1), 1, 1, 5)
+    deaths = s_int(p.get("deaths", 0), 0, 0, 1000000)
     if victory:
         fb = ("Galaxy saved, pilot! Try a no-bomb run next - you clearly "
               "do not need the training wheels.")
     else:
-        lvl = int(p.get("level_reached", 1))
         fb = ("Good run to sector %d. Spend coins on HULL in the Hangar, and "
               "dodge toward the gaps, not away from bullets.") % lvl
     out = chat(
@@ -217,8 +290,7 @@ def make_coach(p: dict) -> dict:
         "short sentences, specific and encouraging, under 40 words, clean "
         "and family-friendly. Plain text only.",
         "Run over. Victory: %s. Score %s, kills %s, reached level %s of 5, "
-        "deaths %s." % (victory, p.get("score", 0), p.get("kills", 0),
-                        p.get("level_reached", 1), p.get("deaths", 0)),
+        "deaths %s." % (victory, score, kills, lvl, deaths),
         max_tokens=300,
     )
     return {"advice": (out[:300] if out else fb),

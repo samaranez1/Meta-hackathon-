@@ -49,7 +49,10 @@ var _ai_interval_mult := 1.0
 var _ai_scale_mult := 1.0
 var _ai_taunt := ""
 var _briefing_spoken := ""
-var _director_cd := 12.0
+# Live wingman tip cadence: request_director() fires at most this often, and
+# only while playing (see _process) - never every frame.
+const DIRECTOR_INTERVAL := 25.0
+var _director_cd := DIRECTOR_INTERVAL
 var _run_start_msec := 0
 var _run_deaths := 0
 
@@ -173,7 +176,7 @@ func _process(delta: float) -> void:
 	if state == State.PLAYING:
 		_director_cd -= delta
 		if _director_cd <= 0.0:
-			_director_cd = 12.0
+			_director_cd = DIRECTOR_INTERVAL
 			_request_director()
 	var cfg: Dictionary = LEVELS[level - 1]
 	if state == State.PLAYING and not _boss_spawned:
@@ -223,7 +226,7 @@ func start_game() -> void:
 	_ai_interval_mult = 1.0
 	_ai_scale_mult = 1.0
 	_ai_taunt = ""
-	_director_cd = 12.0
+	_director_cd = DIRECTOR_INTERVAL
 	hud.call("hide_menu")
 	hud.call("set_score", score, hi_score)
 	hud.call("set_coins", coins)

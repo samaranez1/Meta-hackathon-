@@ -6,7 +6,8 @@ extends EditorExportPlugin
 ## but ads are unavailable and the game uses no-op fallbacks.
 
 const AAR_RES_PATH := "res://addons/huawei_petal_ads/android/petal-ads-release.aar"
-const AAR_EXPORT_PATH := "addons/huawei_petal_ads/android/petal-ads-release.aar"
+# Relative to res://addons/ (Godot prepends it); a leading "addons/" doubles the path.
+const AAR_EXPORT_PATH := "huawei_petal_ads/android/petal-ads-release.aar"
 # Verify against https://developer.huawei.com/consumer/en/doc/ before release builds.
 const HMS_ADS_DEP := "com.huawei.hms:ads-lite:13.4.62.300"
 
