@@ -81,8 +81,11 @@ sound effects and music are all generated in code.
   packaging script (`store/windows/Build-Msix.ps1`), auto-generated Store
   assets, privacy template, submission guide, and gamepad support
   (stick/D-pad move, A bomb, Start confirm/pause).
-- **Score**: kills + boss bounties + level-clear bonus; best score is saved to
-  `user://space_shooters_save.cfg`.
+- **Score**: kills + boss bounties + level-clear bonus; best score, coins,
+  and hangar upgrades are saved per player in `user://save.cfg`, keyed by
+  the player ID in `user://id.cfg` (minted on first launch). New players
+  start with every upgrade at level 0; the Hangar has a Reset Progress
+  button that deletes the save.
 
 ## Files
 
@@ -94,6 +97,7 @@ scenes/main.tscn       Boot scene (everything else is built in code)
 shaders/chroma_key.gdshader   Magenta-removal for player.png
 scripts/
   main.gd          Game manager: levels, waves, bosses, score, saves
+  save_manager.gd  Per-player saves: player ID, zero defaults, reset
   player.gd        Ship: movement, auto-fire, bombs, shields, i-frames
   enemy.gd         7 enemy types with distinct AI + visuals
   boss.gd          5 stylish bosses, phases, bullet patterns
@@ -109,6 +113,7 @@ ai/server.py        AI backend: briefing/director/coach/emblem
 ai/test_server.py   Backend regression tests (`python3 ai/test_server.py`)
 tests/ai_test.tscn  Headless AI integration test
 tests/powerup_test.tscn  Headless pickup physics regression test
+tests/save_progress_test.tscn  Headless per-player save regression test
 HACKATHON.md        Hackathon submission doc
 DEMO_SCRIPT.md      90-second demo video plan
 ```

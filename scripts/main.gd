@@ -12,6 +12,7 @@ const AdsManagerScript := preload("res://scripts/ads_manager.gd")
 const IapManagerScript := preload("res://scripts/iap_manager.gd")
 const MetaAiScript := preload("res://scripts/meta_ai.gd")
 const VoiceScript := preload("res://scripts/voiceover.gd")
+const SaveManager := preload("res://scripts/save_manager.gd")
 
 enum State { MENU, PLAYING, LEVEL_CLEAR, GAME_OVER, VICTORY }
 
@@ -52,8 +53,6 @@ var _director_cd := 12.0
 var _run_start_msec := 0
 var _run_deaths := 0
 
-const SAVE_PATH := "user://space_shooters_save.cfg"
-
 const LEVELS := [
 	{"name": "NEON DRIFT", "duration": 38.0, "interval": 2.2, "scale": 1.0,
 	 "pool": ["drone", "drone", "weaver", "kamikaze"]},
@@ -76,7 +75,9 @@ const SHOP := [
 	{"id": "bomb", "name": "BOMB", "desc": "start with +1 bomb", "max": 2, "costs": [120, 280]},
 ]
 
+# All upgrades start locked at 0; per-player values load in _load_hi().
 var meta := {"power": 0, "rate": 0, "hull": 0, "engine": 0, "shield": 0, "bomb": 0}
+var player_id: String = ""
 
 
 func _ready() -> void:
@@ -133,6 +134,7 @@ func _ready() -> void:
 	hud.connect("upgrade_bought", buy_upgrade)
 	hud.connect("shop_closed", close_shop)
 	hud.connect("shop_requested", open_shop)
+	hud.connect("reset_requested", reset_progress)
 	hud.connect("free_coins_requested", _on_free_coins_requested)
 	hud.connect("coin_pack_requested", _on_pack_requested)
 	hud.connect("voice_toggled", _on_voice_toggled)
@@ -537,13 +539,16 @@ func flash_screen(c: Color) -> void:
 
 
 func _load_hi() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(SAVE_PATH) == OK:
-		hi_score = int(cfg.get_value("game", "hi_score", 0))
-		coins = int(cfg.get_value("game", "coins", 0))
-		voice_on = bool(cfg.get_value("game", "voice", true))
-		for key in meta.keys():
-			meta[key] = int(cfg.get_value("meta", key, 0))
+	player_id = SaveManager.get_player_id()
+	var data: Dictionary = SaveManager.load_progress(player_id)
+	hi_score = int(data.get("hi_score", 0))
+	coins = int(data.get("coins", 0))
+	voice_on = bool(data.get("voice", true))
+	meta = (data.get("meta", {}) as Dictionary).duplicate()
+	for entry in SHOP:
+		var id := String(entry["id"])
+		if not meta.has(id):
+			meta[id] = 0
 
 
 func _save_hi() -> void:
@@ -551,13 +556,32 @@ func _save_hi() -> void:
 
 
 func _save_game() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value("game", "hi_score", hi_score)
-	cfg.set_value("game", "coins", coins)
-	cfg.set_value("game", "voice", voice_on)
-	for key in meta.keys():
-		cfg.set_value("meta", key, int(meta[key]))
-	cfg.save(SAVE_PATH)
+	if player_id == "":
+		player_id = SaveManager.get_player_id()
+	SaveManager.save_progress(player_id, {
+		"hi_score": hi_score,
+		"coins": coins,
+		"voice": voice_on,
+		"meta": meta,
+	})
+
+
+## "Reset progress" button: delete the save, restore all-locked defaults.
+func reset_progress() -> void:
+	var fresh: Dictionary = SaveManager.reset_progress()
+	player_id = SaveManager.get_player_id()
+	score = 0
+	hi_score = 0
+	coins = 0
+	voice_on = true
+	meta = (fresh.get("meta", {}) as Dictionary).duplicate()
+	voice.set("enabled", voice_on)
+	hud.call("set_score", score, hi_score)
+	hud.call("set_coins", coins)
+	hud.call("set_voice_enabled", voice_on)
+	if bool(hud.call("is_shop_open")):
+		hud.call("refresh_shop", coins, _shop_items())
+	audio.call("play_powerup")
 
 
 # --- AI Wingman (Meta Model API; all async, all optional) ---

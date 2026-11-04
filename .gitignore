@@ -49,3 +49,8 @@ android-plugins/*/build/
 .DS_Store
 Thumbs.db
 *~
+
+# Player saves / IDs (runtime user:// files - never commit or export)
+save.cfg
+id.cfg
+space_shooters_save.cfg

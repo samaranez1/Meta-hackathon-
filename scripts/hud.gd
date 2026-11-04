@@ -12,6 +12,7 @@ signal shop_requested
 signal free_coins_requested
 signal coin_pack_requested(pack_id: String)
 signal voice_toggled(enabled: bool)
+signal reset_requested
 
 const KOFI_URL := "https://ko-fi.com/samuelaranez"
 
@@ -382,6 +383,10 @@ func _build_shop() -> void:
     var back := _menu_btn("<< BACK")
     back.pressed.connect(func() -> void: _click(); shop_closed.emit())
     v.add_child(back)
+    var reset := _menu_btn("RESET PROGRESS")
+    reset.add_theme_color_override("font_color", Color(1.0, 0.55, 0.5))
+    reset.pressed.connect(func() -> void: _click(); reset_requested.emit())
+    v.add_child(reset)
     _shop.visible = false
 
 
