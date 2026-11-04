@@ -1,15 +1,36 @@
 extends Node
-## Voiceover for AI lines (boss taunts, wingman tips, coach advice) using
-## Godot's built-in text-to-speech, plus browser speechSynthesis on web
-## exports where DisplayServer TTS is unsupported. Silent no-op where
-## neither is available (e.g. headless), and never blocks gameplay.
+## Voiceover for AI lines (boss taunts, wingman tips, coach advice).
+## Backend chain, picked per platform:
+##   web     -> browser speechSynthesis via JavaScriptBridge
+##   android -> DisplayServer TTS with an English voice lookup
+##   desktop -> DisplayServer TTS where the OS provides it
+##   fallback (any platform) -> pre-recorded clips in res://audio/vox/
+##               (exact-line match, else a short cue) on AudioStreamPlayer
+## Silent no-op only when no backend exists. Never blocks gameplay.
+## NOTE: is_supported() reports live TTS only (web/native) and is pinned
+## by the AI test; the clip fallback is transparent and deliberately not
+## reflected there.
 
 var enabled := true
+## Introspection for tests/debug: backend used by the last speak().
+## One of "web", "native", "clips", "none".
+var last_backend := "none"
+## Clip path used by the last speak() via the clips backend ("" otherwise).
+var last_clip := ""
 
 const TTS_STATE_PATH := "user://space_shooters_tts.cfg"
+const VOX_DIR := "res://audio/vox/"
+const VOX_CUE := "res://audio/vox_cue.wav"
+const VOX_LANGS: Array[String] = ["en-US", "en"]
+const VOICE_MAX_TRIES := 5
+## Only utterances at least this long (estimated seconds) arm the silence
+## probe; short lines can finish before the check and must never count
+## against a healthy engine.
+const PROBE_MIN_DURATION := 1.5
 
 var _voice_id := ""
 var _picked := false
+var _voice_tries := 0
 var _web_tts := -1 # -1 unknown, 0 no, 1 yes
 # Native TTS (notably Android) errors if tts_stop() runs before the engine
 # has initialized via the first tts_speak(), so only stop after speaking.
@@ -31,6 +52,7 @@ var _warned_no_backend := false
 var _last_text := ""
 var _last_pitch := 1.0
 var _last_rate := 1.0
+var _clip_player: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -43,11 +65,15 @@ func _ready() -> void:
 		# migrates installs saved by the old Android-default-off build, which
 		# persisted native_allowed=false with native_broken=false.
 		_native_allowed = not _native_broken
-	print("[voice] ready: native=%s (allowed=%s broken=%s feature=%s setting=%s) web=%s enabled=%s" % [
+	_clip_player = AudioStreamPlayer.new()
+	_clip_player.bus = "Master"
+	_clip_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_clip_player)
+	print("[voice] ready: native=%s (allowed=%s broken=%s feature=%s setting=%s) web=%s clips=%s enabled=%s" % [
 		_use_native(), _native_allowed, _native_broken,
 		DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH),
 		bool(ProjectSettings.get_setting("audio/general/text_to_speech", false)),
-		_web_tts_available(), enabled])
+		_web_tts_available(), _clips_available(), enabled])
 
 
 func _save_tts_state() -> void:
@@ -58,7 +84,30 @@ func _save_tts_state() -> void:
 
 
 func _use_native() -> bool:
+	return _native_usable()
+
+
+func _native_usable() -> bool:
 	return _native_allowed and not _native_broken and DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH)
+
+
+## Backend for the next speak(): "web", "native", "clips", or "none".
+func get_backend() -> String:
+	if OS.has_feature("web"):
+		if _web_tts_available():
+			return "web"
+	elif OS.has_feature("android"):
+		if _native_usable():
+			return "native"
+	elif _native_usable():
+		return "native"
+	if _clips_available():
+		return "clips"
+	return "none"
+
+
+func _clips_available() -> bool:
+	return ResourceLoader.exists(VOX_CUE)
 
 
 func is_supported() -> bool:
@@ -71,14 +120,19 @@ func speak(text: String, pitch: float = 1.0, rate: float = 1.0) -> void:
 	var clean := text.strip_edges()
 	if clean == "":
 		return
-	if _use_native():
-		_speak_native(clean, pitch, rate)
-	elif _web_tts_available():
-		_speak_web(clean, pitch, rate)
-	else:
-		if not _warned_no_backend:
-			_warned_no_backend = true
-			print("[voice] no TTS backend available; voiceover silent")
+	var backend := get_backend()
+	last_backend = backend
+	match backend:
+		"web":
+			_speak_web(clean, pitch, rate)
+		"native":
+			_speak_native(clean, pitch, rate)
+		"clips":
+			_speak_clip(clean, rate)
+		_:
+			if not _warned_no_backend:
+				_warned_no_backend = true
+				print("[voice] no TTS backend available; voiceover silent")
 
 
 func _speak_native(clean: String, pitch: float, rate: float) -> void:
@@ -95,6 +149,57 @@ func _speak_native(clean: String, pitch: float, rate: float) -> void:
 	_arm_android_probe()
 
 
+func _speak_clip(text: String, rate: float) -> void:
+	if _clip_player == null:
+		return
+	var clip := _clip_for_text(text)
+	if clip == "":
+		return
+	var stream := load(clip) as AudioStream
+	if stream == null:
+		return
+	last_clip = clip
+	_clip_player.stop()
+	_clip_player.stream = stream
+	_clip_player.pitch_scale = clampf(rate, 0.5, 2.0)
+	_clip_player.play()
+
+
+## Exact-line recording when one was shipped, else the generic cue.
+func _clip_for_text(text: String) -> String:
+	var exact := VOX_DIR + clip_key(text) + ".wav"
+	if ResourceLoader.exists(exact):
+		return exact
+	if ResourceLoader.exists(VOX_CUE):
+		return VOX_CUE
+	return ""
+
+
+## Stable file key for a voice line (matches the clip generator).
+static func clip_key(text: String) -> String:
+	return "vox_" + text.md5_text()
+
+
+## Rough speech time in seconds (~2.5 words/sec at rate 1.0).
+static func estimate_duration(text: String, rate: float) -> float:
+	var words := text.strip_edges().split(" ", false).size()
+	return maxf(0.4, float(maxi(words, 1)) / 2.5 / clampf(rate, 0.5, 2.0))
+
+
+## Best voice from an engine list: US English, then any English, then first.
+static func choose_voice(voices: PackedStringArray) -> String:
+	if voices.is_empty():
+		return ""
+	for v in voices:
+		var lv := v.to_lower()
+		if lv.contains("en-us") or lv.contains("en_us"):
+			return v
+	for v in voices:
+		if v.to_lower().begins_with("en"):
+			return v
+	return voices[0]
+
+
 func stop() -> void:
 	if _spoke_native and _use_native():
 		DisplayServer.tts_stop()
@@ -102,6 +207,8 @@ func stop() -> void:
 	_utterance_seq += 1
 	if _web_tts_available():
 		_stop_web()
+	if _clip_player != null:
+		_clip_player.stop()
 
 
 func toggle() -> bool:
@@ -117,6 +224,8 @@ func toggle() -> bool:
 		_probe_pending = false
 		_probe_strikes = 0
 		_spoke_native = false
+		_picked = false
+		_voice_tries = 0
 		_warned_no_backend = false
 		_save_tts_state()
 	return enabled
@@ -125,12 +234,30 @@ func toggle() -> bool:
 func _pick_voice() -> void:
 	if _picked:
 		return
-	_picked = true
-	if OS.has_feature("android"):
-		return # Default voice: get_voices() pre-init errors and can stall.
-	var voices: PackedStringArray = DisplayServer.tts_get_voices_for_language("en")
-	if not voices.is_empty():
-		_voice_id = voices[0]
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		return # No engine: keep default "" and let the backend chain decide.
+	_voice_tries += 1
+	for lang in VOX_LANGS:
+		var got := choose_voice(_lang_voices(lang))
+		if got != "":
+			_voice_id = got
+			_picked = true
+			return
+	if _voice_tries >= VOICE_MAX_TRIES:
+		# Engine unforthcoming (some never enumerate but still speak the
+		# default voice): stop asking and use "" from here on.
+		_picked = true
+
+
+## Voice ids for a language. tts_get_voices_for_language is the Godot 4 API
+## (verified on 4.7.2); the by_language spelling is probed first in case a
+## build or future version provides it instead.
+func _lang_voices(lang: String) -> PackedStringArray:
+	if DisplayServer.has_method("tts_get_voices_by_language"):
+		var alt: Variant = DisplayServer.call("tts_get_voices_by_language", lang)
+		if typeof(alt) == TYPE_PACKED_STRING_ARRAY:
+			return alt
+	return DisplayServer.tts_get_voices_for_language(lang)
 
 
 func _arm_android_probe() -> void:
@@ -143,6 +270,8 @@ func _arm_android_probe() -> void:
 		return
 	if _probe_pending or _probe_confirmed or _native_broken:
 		return
+	if estimate_duration(_last_text, _last_rate) < PROBE_MIN_DURATION:
+		return # Too short to prove anything; never counts against the engine.
 	_probe_pending = true
 	get_tree().create_timer(0.6).timeout.connect(_on_probe_timeout.bind(_utterance_seq))
 

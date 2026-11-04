@@ -108,12 +108,15 @@ scripts/
   audio_manager.gd Procedural SFX + looping music + per-boss taunt stings (no audio files)
   explosion.gd     Flash + shockwave + sparks, screen shake hookup
   meta_ai.gd        AI Wingman client (Meta Model API, offline fallback)
-  voiceover.gd      On-device TTS for taunts, tips, coach advice
+  voiceover.gd      Spoken voice: web speechSynthesis, Android TTS, clip fallback
+audio/vox/          Pre-recorded fallback clips (exact-line MD5 match)
+audio/vox_cue.wav   Generic fallback cue for dynamic lines
 ai/server.py        AI backend: briefing/director/coach/emblem
 ai/test_server.py   Backend regression tests (`python3 ai/test_server.py`)
 tests/ai_test.tscn  Headless AI integration test
 tests/powerup_test.tscn  Headless pickup physics regression test
 tests/save_progress_test.tscn  Headless per-player save regression test
+tests/voice_test.tscn  Headless voice backend/clip/toggle regression test
 HACKATHON.md        Hackathon submission doc
 DEMO_SCRIPT.md      90-second demo video plan
 ```
