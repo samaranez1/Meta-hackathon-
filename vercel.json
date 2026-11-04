@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "build/web",
+  "outputDirectory": "build",
   "functions": {
     "api/*.py": {
       "runtime": "python3.9"
