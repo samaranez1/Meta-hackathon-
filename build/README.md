@@ -1,4 +1,5 @@
 # Space Shooters: AI Wingman (Godot 4.7)
+play it on vercel: https://meta-hackathon-ai-ebk9.vercel.app/
 
 >
 > Built by **Samuel Arañez** — Hilongos, Leyte, Philippines.
