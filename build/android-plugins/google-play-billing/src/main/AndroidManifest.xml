@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Library manifest for the Play Billing bridge. The com.android.vending.BILLING
+     permission comes from the Billing Library's own manifest via manifest
+     merging - nothing needed here. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+</manifest>
