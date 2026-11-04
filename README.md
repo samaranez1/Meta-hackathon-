@@ -20,6 +20,7 @@ The player ship uses `player.png`
 (its magenta background is removed at runtime by a chroma-key shader, so you
 don't need to edit the image).
 Play the game on vercel https://meta-hackathon-ai-ebk9.vercel.app/
+![Screenshot](Screenshot_20261104-142228.png)
 
 
 ## Run it
