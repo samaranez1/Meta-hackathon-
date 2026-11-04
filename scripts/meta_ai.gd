@@ -23,14 +23,47 @@ var _busy: Dictionary = {"health": false, "briefing": false, "director": false, 
 
 
 func _ready() -> void:
-	var cfg := str(ProjectSettings.get_setting("space_shooters/ai_url", ""))
-	if cfg != "":
-		base_url = cfg
-	else:
-		var env := OS.get_environment("SPACE_AI_URL")
-		if env != "":
-			base_url = env
+	base_url = _resolve_base_url()
 	check_health()
+
+
+func fallback_taunt(level: int) -> String:
+	return str(_fb_briefing(level, "")["taunt"])
+
+
+func fallback_briefing(level: int, level_name: String) -> Dictionary:
+	return _fb_briefing(level, level_name)
+
+
+func _resolve_base_url() -> String:
+	var cfg := str(ProjectSettings.get_setting("space_shooters/ai_url", "")).strip_edges()
+	if cfg != "":
+		return cfg.rstrip("/")
+	var env := OS.get_environment("SPACE_AI_URL").strip_edges()
+	if env != "":
+		return env.rstrip("/")
+	if OS.has_feature("web"):
+		var origin := _web_origin()
+		if origin != "":
+			return origin + "/api"
+		return "/api"
+	return DEFAULT_URL
+
+
+func _web_origin() -> String:
+	if not OS.has_feature("web"):
+		return ""
+	if not Engine.has_singleton("JavaScriptBridge"):
+		return ""
+	var js: Object = Engine.get_singleton("JavaScriptBridge")
+	if js == null or not js.has_method("eval"):
+		return ""
+	var v: Variant = js.call("eval", "window.location.origin;", true)
+	if typeof(v) == TYPE_STRING:
+		var s := (v as String).strip_edges()
+		if s.begins_with("http"):
+			return s.rstrip("/")
+	return ""
 
 
 func check_health() -> void:
@@ -58,8 +91,7 @@ func request_briefing(level: int, level_name: String, hp_pct: int, kills: int) -
 
 
 func request_director(level: int, hp_frac: float, kills_per_min: float, deaths: int) -> void:
-	var fb := {"spawn_interval_mult": 1.0, "enemy_scale_mult": 1.0,
-		"tip": "", "source": "fallback"}
+	var fb := _fb_director(hp_frac, kills_per_min, deaths)
 	if not use_ai:
 		director_ready.emit(fb)
 		return
@@ -91,7 +123,7 @@ func request_coach(score: int, kills: int, level_reached: int, deaths: int, vict
 
 func _spawn() -> HTTPRequest:
 	var http := HTTPRequest.new()
-	http.timeout = TIMEOUT
+	http.timeout = 15.0 if OS.has_feature("web") else TIMEOUT
 	add_child(http)
 	return http
 
@@ -147,10 +179,13 @@ func _on_briefing(result: int, code: int, _h: PackedStringArray, body: PackedByt
 
 func _on_director(result: int, code: int, _h: PackedStringArray, body: PackedByteArray, http: HTTPRequest, fb: Dictionary) -> void:
 	var d := _parse(body) if result == HTTPRequest.RESULT_SUCCESS and code == 200 else {}
+	var tip := str(d.get("tip", fb.get("tip", "")))
+	if tip == "":
+		tip = str(fb.get("tip", ""))
 	var out := {
-		"spawn_interval_mult": clampf(float(d.get("spawn_interval_mult", 1.0)), 0.8, 1.4),
-		"enemy_scale_mult": clampf(float(d.get("enemy_scale_mult", 1.0)), 0.8, 1.2),
-		"tip": str(d.get("tip", "")),
+		"spawn_interval_mult": clampf(float(d.get("spawn_interval_mult", fb.get("spawn_interval_mult", 1.0))), 0.8, 1.4),
+		"enemy_scale_mult": clampf(float(d.get("enemy_scale_mult", fb.get("enemy_scale_mult", 1.0))), 0.8, 1.2),
+		"tip": tip,
 		"source": str(d.get("source", "fallback")),
 	}
 	_finish(http, "director")
@@ -189,6 +224,23 @@ func _fb_briefing(level: int, level_name: String) -> Dictionary:
 		"tip": tip,
 		"source": "fallback",
 	}
+
+
+func _fb_director(hp_frac: float, kills_per_min: float, deaths: int) -> Dictionary:
+	# Mirrors ai/wingman_core.fallback_director so offline/web still assists.
+	var hp := clampf(hp_frac, 0.0, 1.0)
+	var kpm := clampf(kills_per_min, 0.0, 60.0)
+	if hp < 0.35 or deaths > 0:
+		return {"spawn_interval_mult": 1.35, "enemy_scale_mult": 0.85,
+			"tip": "Wingman easing pressure - grab shields and breathe.",
+			"source": "fallback"}
+	if hp > 0.8 and kpm > 12.0:
+		return {"spawn_interval_mult": 0.85, "enemy_scale_mult": 1.15,
+			"tip": "You are cruising - Wingman is turning up the heat.",
+			"source": "fallback"}
+	return {"spawn_interval_mult": 1.0, "enemy_scale_mult": 1.0,
+		"tip": "Holding steady. Keep moving in small circles.",
+		"source": "fallback"}
 
 
 func _fb_coach(level_reached: int, victory: bool) -> String:

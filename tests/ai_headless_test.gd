@@ -77,10 +77,61 @@ func _run() -> void:
 	_check(hud != null, "hud built")
 	var vnode: Node = _main.get("voice")
 	_check(vnode != null, "voice node built")
+	# Regression: stop() before any speak() must be safe (Android TTS
+	# errors if tts_stop runs before the engine initializes).
+	vnode.call("stop")
+	_check(bool(vnode.get("_spoke_native")) == false, "no native TTS touched before first speak")
 	_check(bool(vnode.call("toggle")) == false, "voice toggles off")
 	_check(bool(vnode.call("toggle")) == true, "voice toggles on")
 	vnode.call("speak", "voice check", 1.0, 1.0)
 	vnode.call("stop")
+	_check(bool(vnode.call("is_supported")) == false, "voice unsupported headless")
+	_check(bool(vnode.get("_native_broken")) == false, "native voice stays enabled off-android")
+	# Persisted breaker: a confirmed-broken engine is remembered across
+	# sessions, and toggling VOX back on re-arms native detection.
+	# (The gate defaults to open everywhere; only the probe can close it.)
+	_check(bool(vnode.get("_native_allowed")) == true, "native gate open off-android")
+	vnode.set("_native_broken", true)
+	vnode.set("_native_allowed", false)
+	vnode.call("_save_tts_state")
+	var v2: Node = vnode.get_script().new()
+	add_child(v2) # _ready loads the persisted flags
+	_check(bool(v2.get("_native_broken")) == true, "broken flag persists across sessions")
+	_check(bool(v2.get("_native_allowed")) == false, "disallowed flag persists across sessions")
+	v2.queue_free()
+	vnode.call("toggle") # off
+	vnode.call("toggle") # on -> re-arm
+	_check(bool(vnode.get("_native_broken")) == false, "vox toggle re-arms native detection")
+	_check(bool(vnode.get("_native_allowed")) == true, "vox toggle re-opens native gate")
+	_check(bool(vnode.get("enabled")) == true, "vox left on")
+	# Regression: installs saved by the old Android-default-off build
+	# persisted allowed=false with broken=false; loading must migrate that
+	# to allowed=true instead of silencing voice forever.
+	vnode.set("_native_allowed", false)
+	vnode.set("_native_broken", false)
+	vnode.call("_save_tts_state")
+	var v3: Node = vnode.get_script().new()
+	add_child(v3) # _ready loads the persisted flags
+	_check(bool(v3.get("_native_allowed")) == true, "old default-off state migrates to allowed")
+	v3.queue_free()
+	vnode.set("_native_allowed", true)
+	vnode.call("_save_tts_state")
+	# Probe robustness: one silent check retries the same line (the first
+	# utterance can be eaten by async engine init); two in a row disable
+	# native TTS. Driven directly: the timer arm is Android-only, but the
+	# timeout logic is platform-independent (headless TTS is a safe no-op).
+	vnode.set("_last_was_speak", true)
+	vnode.set("_last_text", "probe check")
+	vnode.set("_utterance_seq", 41)
+	vnode.call("_on_probe_timeout", 41)
+	_check(bool(vnode.get("_native_broken")) == false, "first silent probe retries, stays enabled")
+	_check(int(vnode.get("_utterance_seq")) == 42, "retry re-issues the utterance")
+	vnode.call("_on_probe_timeout", 42)
+	_check(bool(vnode.get("_native_broken")) == true, "second silent probe disables native TTS")
+	vnode.call("toggle") # off
+	vnode.call("toggle") # on -> re-arm
+	_check(bool(vnode.get("_native_broken")) == false, "re-arm clears probe breaker")
+	_check(bool(vnode.get("_native_allowed")) == true, "re-arm re-opens native gate")
 	var ai_label: Label = hud.get("_ai_label")
 	var ann: Label = hud.get("_announce_label")
 	_check(await _wait_until(func() -> bool: return ai_label.text != "AI ...", 15.0),
@@ -90,6 +141,7 @@ func _run() -> void:
 	_main.call("start_game")
 	await get_tree().process_frame
 	_main.get("player").set("hp", 999) # survive stray bullets during live AI waits
+	_check(str(_main.get("_briefing_spoken")) != "", "fallback briefing spoken at level start")
 	_check(await _wait_until(func() -> bool: return str(_main.get("_ai_taunt")) != "", 30.0),
 		"briefing reached game (taunt stored)")
 	print("[ai-test] announce after briefing: '%s'" % ann.text)

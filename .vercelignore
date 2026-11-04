@@ -1,0 +1,8 @@
+android/
+store/
+generated_images/
+*.apk
+*.aab
+*.keystore
+ai/.env
+.git/

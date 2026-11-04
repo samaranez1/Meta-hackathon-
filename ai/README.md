@@ -46,6 +46,27 @@ The Godot game auto-detects this server. If it is not running (or the key
 is missing), the game keeps playing with the same offline fallback lines,
 and the HUD shows `AI OFFLINE`.
 
+## Web export + Vercel
+
+The web build talks to same-origin `/api/*` (no localhost). The Vercel
+functions in `api/` reuse the same logic via `ai/wingman_core.py`:
+
+- `GET /api/health`, `POST /api/briefing`, `/api/director`, `/api/coach`
+- `POST /api/art/emblem` (bonus, returns `b64_json`, no files)
+
+Deploy:
+
+1. In Godot: `Project -> Export... -> Web -> Export Project` to
+   `build/web/index.html` (already set in `export_presets.cfg`).
+2. `vercel` from the repo root (uses `vercel.json`, serves `build/web/`
+   + `api/`). Or `vercel --prod` to go live.
+3. In the Vercel dashboard: `Project -> Settings -> Environment Variables`,
+   add `META_API_KEY=LLM|...` (and optional `META_MODEL`), then redeploy.
+   Without the key the game still plays with fallback lines (`AI LOCAL`).
+
+Local logic lives in `ai/wingman_core.py`; `ai/server.py` and `api/*.py`
+are thin wrappers, so desktop and web never drift.
+
 ## Tests
 
 ```bash

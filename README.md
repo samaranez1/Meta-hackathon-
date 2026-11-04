@@ -1,7 +1,8 @@
 # Space Shooters: AI Wingman (Godot 4.7)
 
 > Meta Global AI Developer Hackathon entry - Indie track, "Build for Your
-> World". 
+> World". See [HACKATHON.md](HACKATHON.md) for the submission and
+> [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the demo video plan.
 >
 > Built by **Samuel Arañez** — Hilongos, Leyte, Philippines.
 
@@ -14,11 +15,16 @@ on-device voiceover - `VOX` button), and a bonus **Muse Image** victory emblem. 
 badge shows `AI META` / `AI LOCAL` / `AI OFF`, and the game plays fully
 offline if the server or key is missing - start it with
 `python3 ai/server.py` (stdlib-only, no pip installs; set `META_API_KEY`
-for full AI mode - see `ai/README.md`).
+for full AI mode - see `ai/README.md`). The web export talks to
+same-origin `/api/*` on Vercel with the same AI + spoken taunts/tips
+(browser speechSynthesis). The web export talks to
+same-origin `/api/*` on Vercel with the same AI + spoken taunts/tips
+(browser speechSynthesis).
 
 The player ship uses `player.png`
 (its magenta background is removed at runtime by a chroma-key shader, so you
 don't need to edit the image).
+
 Play the game on vercel https://meta-hackathon-ai-ebk9.vercel.app/
 
 ![Screenshot](Screenshot_20261104-142228.png)
@@ -28,6 +34,7 @@ Play the game on vercel https://meta-hackathon-ai-ebk9.vercel.app/
 https://ko-fi.com/samuelaranez
 
 
+=======
 
 ## Run it
 

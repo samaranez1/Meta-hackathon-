@@ -13,6 +13,8 @@ signal free_coins_requested
 signal coin_pack_requested(pack_id: String)
 signal voice_toggled(enabled: bool)
 
+const KOFI_URL := "https://ko-fi.com/samuelaranez"
+
 var _score_label: Label
 var _hi_label: Label
 var _level_label: Label
@@ -238,6 +240,10 @@ func _build_menus() -> void:
     var hangar := _menu_btn("HANGAR (UPGRADES)")
     hangar.pressed.connect(func() -> void: _click(); shop_requested.emit())
     v.add_child(hangar)
+    var kofi := _menu_btn("SUPPORT ON KO-FI")
+    _style_kofi_btn(kofi)
+    kofi.pressed.connect(_on_kofi)
+    v.add_child(kofi)
     var help := _font(Label.new(), 15, Color(0.8, 0.85, 0.95))
     help.text = "Move: WASD / Arrows / Mouse-hold / Touch-drag\nGuns fire automatically - grab P to power up\nBomb: SPACE / X / right-click / BOMB button\nPause: P or ESC\nHangar: upgrades, free coins via ad, coin packs in store"
     help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -301,6 +307,27 @@ func _menu_btn(text: String) -> Button:
     b.focus_mode = Control.FOCUS_NONE
     b.add_theme_font_size_override("font_size", 22)
     return b
+
+
+func _style_kofi_btn(b: Button) -> void:
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color("#ff5e5b")
+    normal.set_corner_radius_all(8)
+    var hover := normal.duplicate() as StyleBoxFlat
+    hover.bg_color = Color("#ff7a78")
+    var pressed := normal.duplicate() as StyleBoxFlat
+    pressed.bg_color = Color("#d94a48")
+    b.add_theme_stylebox_override("normal", normal)
+    b.add_theme_stylebox_override("hover", hover)
+    b.add_theme_stylebox_override("pressed", pressed)
+    b.add_theme_color_override("font_color", Color.WHITE)
+    b.add_theme_color_override("font_hover_color", Color.WHITE)
+    b.add_theme_color_override("font_pressed_color", Color.WHITE)
+
+
+func _on_kofi() -> void:
+    _click()
+    OS.shell_open(KOFI_URL)
 
 
 func _click() -> void:

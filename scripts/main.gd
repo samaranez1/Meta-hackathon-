@@ -47,6 +47,7 @@ var _enemies: Array = []
 var _ai_interval_mult := 1.0
 var _ai_scale_mult := 1.0
 var _ai_taunt := ""
+var _briefing_spoken := ""
 var _director_cd := 12.0
 var _run_start_msec := 0
 var _run_deaths := 0
@@ -256,6 +257,18 @@ func _start_level() -> void:
 		_spawn_player()
 	else:
 		player.call("heal_full")
+	# Pre-seed taunt so the boss always taunts even if the briefing
+	# request is still in flight (slow networks, web export).
+	if ai != null and ai.has_method("fallback_briefing"):
+		var fb: Dictionary = ai.call("fallback_briefing", level, String(cfg["name"]))
+		_ai_taunt = str(fb.get("taunt", ""))
+		# Speak the offline briefing NOW so voice is audible even when the
+		# live AI request takes 10-30 s; _on_ai_briefing voices the live
+		# text when (and only when) it differs.
+		_briefing_spoken = str(fb.get("briefing", ""))
+		voice.call("speak", _briefing_spoken, 1.0, 1.05)
+	elif ai != null and ai.has_method("fallback_taunt"):
+		_ai_taunt = str(ai.call("fallback_taunt", level))
 	_request_briefing()
 
 
@@ -365,6 +378,8 @@ func _spawn_boss() -> void:
 		if is_instance_valid(e):
 			e.queue_free()
 	_enemies.clear()
+	if _ai_taunt == "" and ai != null and ai.has_method("fallback_taunt"):
+		_ai_taunt = str(ai.call("fallback_taunt", level))
 	_boss = BossScript.new()
 	_boss.call("setup", level, world, audio)
 	world.add_child(_boss)
@@ -565,10 +580,16 @@ func _on_ai_health(online: bool, source: String) -> void:
 
 
 func _on_ai_briefing(data: Dictionary) -> void:
-	_ai_taunt = str(data.get("taunt", ""))
+	var taunt := str(data.get("taunt", ""))
+	if taunt != "":
+		_ai_taunt = taunt
 	print("[ai] briefing (%s): %s" % [str(data.get("source", "?")), str(data.get("briefing", ""))])
 	if state == State.PLAYING:
-		hud.call("announce", str(data.get("briefing", "")), 3.2)
+		var briefing := str(data.get("briefing", ""))
+		hud.call("announce", briefing, 3.2)
+		if briefing != "" and briefing != _briefing_spoken:
+			_briefing_spoken = briefing
+			voice.call("speak", briefing, 1.0, 1.05)
 
 
 func _request_director() -> void:

@@ -17,6 +17,10 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.02, 0.02, 0.08, 1)
 config/icon="res://icon.svg"
 
+[audio]
+
+general/text_to_speech=true
+
 [display]
 
 window/size/viewport_width=480
@@ -26,7 +30,7 @@ window/stretch/aspect="expand"
 
 [editor]
 
-movie_writer/movie_file="/storage/emulated/0/demo.avi"
+movie_writer/movie_file="/storage/emulated/0/Movies/demo.avi"
 
 [editor_plugins]
 
@@ -46,5 +50,4 @@ textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_s3tc_bptc=true
-textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.02, 0.02, 0.08, 1)
